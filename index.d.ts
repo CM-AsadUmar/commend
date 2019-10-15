@@ -13,8 +13,12 @@ export interface CommendOptions {
   '||'?(text: string): string;
   /** URL */
   '<>'?(href: string, text: string): string;
+  /** Quote */
+  '>'?(text: string): string;
   /** Mention */
   '@'?(text: string): string;
+  /** quotes */
+  '``'?(text: string): string;
   /** Newline replacement */
   '\n'?: string;
 }

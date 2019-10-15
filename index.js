@@ -5,17 +5,13 @@
 
 var isdigit = /\d/;
 
-var htmlMap = {
+var specialchars = {
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
   '"': '&quot;',
-  "'": '&#039;',
+  '\'': '&#039;',
 };
-
-function escapeChar(char) {
-  return htmlMap.hasOwnProperty(char) ? htmlMap[char] : char;
-}
 
 /** @example <https://github.com/caresx/commend#readme> */
 function commend(str, options) {
@@ -28,6 +24,7 @@ function commend(str, options) {
   var newline = options['\n'];
   // Current character
   var c = 0;
+  var cx = -1;
   // Output (stack)
   var out = [''];
   // Modifiers
@@ -121,7 +118,7 @@ function commend(str, options) {
     if (isnewline) {
       // Pop all existing modifiers when a newline is encountered
       // eslint-disable-next-line
-      while (lastmod && lastmod !== '.' && lastmod !== '-') {
+      while (lastmod && lastmod !== '.' && lastmod !== '-' && lastmod !== '`') {
         popmod();
       }
       if (!liststack) emit(newline);
@@ -165,11 +162,13 @@ function commend(str, options) {
         var ismod = chr === '-' || chr === '>';
         if (
           lastmod !== '<>' &&
-          (chr === '*' ||
+          (
+            chr === '*' ||
             chr === '_' ||
             chr === '~' ||
-            (chr === '|' && str[c + 1] === '|'))
-        ) {
+            (chr === '|' && str[c + 1] === '|') ||
+            chr === '`'
+          )) {
           ismod = true;
           if (!escape) {
             if (lastmod === '@') popmod();
@@ -191,12 +190,17 @@ function commend(str, options) {
         }
 
         if (!ismod || escape) {
-          if (lastmod === '@' && chr === ' ') {
+          if (lastmod === '@' && chr === ')') {
+            cx = c + 1;
+          }
+
+          if (cx === c) {
+            cx === -1;
             popmod();
           }
 
           // Regular character (HTML escape)
-          var escaped = escapeChar(chr);
+          var escaped = specialchars[chr] || chr;
           // Emit a literal \ if this character was not a modifier, otherwise just emit the modifier
           // E.g. \* -> *; \\ -> \\; \a -> \a
           emit(escape && !ismod ? '\\' + escaped : escaped);
@@ -232,6 +236,7 @@ var defaults = {
   '**': spanDecorator('*'),
   __: spanDecorator('_'),
   '~~': spanDecorator('~'),
+  '``': spanDecorator('`'),
   '||': spanDecorator('||'),
   '@': inlineDecorator('@'),
   '>': inlineDecorator('>'),
